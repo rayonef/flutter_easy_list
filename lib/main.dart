@@ -35,6 +35,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'My App',
       theme: ThemeData(
+        brightness: Brightness.light,
         primarySwatch: Colors.deepOrange,
         accentColor: Colors.deepPurple,
       ),
