@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import 'package:full_course/models/product.dart';
-import 'package:full_course/scoped-models/products.dart';
+import 'package:full_course/scoped-models/main.dart';
 
 class ProductEditPage extends StatefulWidget {
   @override
@@ -20,7 +20,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
   };
   final GlobalKey<FormState> _formKey =GlobalKey<FormState>();
 
-  Widget _buildSubmitButton(ProductsModel model) {
+  Widget _buildSubmitButton(MainModel model) {
     return RaisedButton(
       child: Text('Save'),
       textColor: Colors.white,
@@ -82,7 +82,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
     );
   }
 
-  Widget _buildPageContent(BuildContext context, ProductsModel model) {
+  Widget _buildPageContent(BuildContext context, MainModel model) {
     final double deviceWidth = MediaQuery.of(context).size.width;
     final double targetWidth = deviceWidth > 550.0 ? 500.0 : deviceWidth * 0.95;
     final double targetPadding = deviceWidth - targetWidth;
@@ -113,31 +113,28 @@ class _ProductEditPageState extends State<ProductEditPage> {
       ),
     );
   }
-  void _submitForm(ProductsModel model) {
+  void _submitForm(MainModel model) {
     if (!_formKey.currentState.validate()) {
       return;
     }
     _formKey.currentState.save();
-    final product = Product(
-      title: _formData['title'],
-      description: _formData['description'],
-      price: _formData['price'],
-      imageUrl: _formData['imageUrl']
-    );
     if (model.selectedProductIndex == null) {
-      model.addProduct(product);
+      model.addProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price']);
     } else {
-      model.updateProduct(product);
+      model.updateProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price']);
     }
     
-    Navigator.pushReplacementNamed(context, '/products');
+    Navigator.pushReplacementNamed(context, '/products')
+      .then((_) {
+        model.selectProduct(null);
+      });
   }
 
   @override
   Widget build(BuildContext context) {
 
-    return ScopedModelDescendant<ProductsModel>(
-      builder: (BuildContext context, Widget child, ProductsModel model) {
+    return ScopedModelDescendant<MainModel>(
+      builder: (BuildContext context, Widget child, MainModel model) {
         final Widget pageContent = _buildPageContent(context, model);
         return model.selectedProductIndex == null 
           ? pageContent
