@@ -21,12 +21,14 @@ class _ProductEditPageState extends State<ProductEditPage> {
   final GlobalKey<FormState> _formKey =GlobalKey<FormState>();
 
   Widget _buildSubmitButton(MainModel model) {
-    return RaisedButton(
-      child: Text('Save'),
-      textColor: Colors.white,
-      color: Theme.of(context).accentColor,
-      onPressed: () => _submitForm(model)
-    );
+    return model.isLoading 
+      ? Center(child: CircularProgressIndicator()) 
+      : RaisedButton(
+        child: Text('Save'),
+        textColor: Colors.white,
+        color: Theme.of(context).accentColor,
+        onPressed: () => _submitForm(model)
+      );
   }
 
   Widget _buildTitle(Product product) {
@@ -118,16 +120,45 @@ class _ProductEditPageState extends State<ProductEditPage> {
       return;
     }
     _formKey.currentState.save();
-    if (model.selectedProductIndex == null) {
-      model.addProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price']);
+    if (model.selectedProductIndex == -1) {
+      model.addProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price'])
+        .then((bool success) {
+          if (!success) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Something went wrong'),
+                  content: Text('Please try again'),
+                  actions: <Widget> [
+                    FlatButton(
+                      child: Text('Okay'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ]
+                );
+              }
+            );
+            return;
+          }
+          Navigator.pushReplacementNamed(context, '/products')
+            .then((_) {
+              model.selectProduct(null);
+            });
+        }).catchError((_) {
+          
+        });
     } else {
-      model.updateProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price']);
+      model.updateProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price'])
+        .then((_) {
+          Navigator.pushReplacementNamed(context, '/products')
+            .then((_) {
+              model.selectProduct(null);
+            });
+        });
     }
     
-    Navigator.pushReplacementNamed(context, '/products')
-      .then((_) {
-        model.selectProduct(null);
-      });
+    
   }
 
   @override
@@ -136,7 +167,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
     return ScopedModelDescendant<MainModel>(
       builder: (BuildContext context, Widget child, MainModel model) {
         final Widget pageContent = _buildPageContent(context, model);
-        return model.selectedProductIndex == null 
+        return model.selectedProductIndex == -1 
           ? pageContent
           :Scaffold(
             appBar: AppBar(

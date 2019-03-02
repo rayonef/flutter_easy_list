@@ -6,6 +6,7 @@ import 'package:full_course/pages/products_admin.dart';
 import 'package:full_course/pages/products.dart';
 import 'package:full_course/pages/product.dart';
 import 'package:full_course/scoped-models/main.dart';
+import 'package:full_course/models/product.dart';
 
 void main() => runApp(MyApp());
 
@@ -35,7 +36,7 @@ class _MyAppState extends State<MyApp> {
         routes:{ 
           '/': (BuildContext context) => AuthPage(),
           '/products': (BuildContext context) => ProductsPage(model),
-          '/admin': (BuildContext context) => ProductsAdminPage(),
+          '/admin': (BuildContext context) => ProductsAdminPage(model),
         },
         onGenerateRoute: (RouteSettings setting) {
           final List<String> pathElements = setting.name.split('/');
@@ -43,9 +44,10 @@ class _MyAppState extends State<MyApp> {
             return null;
           }
           if (pathElements[1] == 'product') {
-            final int index = int.parse(pathElements[2]);
+            final String productId = pathElements[2];
+            final Product product = model.allProducts.firstWhere((Product product) => product.id ==productId);
             return MaterialPageRoute<bool>(
-              builder: (BuildContext context) => ProductPage(index),
+              builder: (BuildContext context) => ProductPage(product),
             );
           }
           return null;
