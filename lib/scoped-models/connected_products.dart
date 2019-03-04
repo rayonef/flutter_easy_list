@@ -49,7 +49,7 @@ mixin ProductsModel on ConnectedProductsModel {
     return _showFavorites;
   }
 
-  Future<dynamic> fetchProducts() {
+  Future<dynamic> fetchProducts({onlyForUser = false}) {
     _isLoading = true;
     notifyListeners();
     return http.get('https://flutter-easylist-11880.firebaseio.com/products.json?auth=${_authenticatedUser.token}')
@@ -63,6 +63,10 @@ mixin ProductsModel on ConnectedProductsModel {
           return;
         }
         productListData.forEach((String productId, dynamic productData) {
+          final bool isFaved = productData['wishlistUsers'] == null 
+            ? false
+            : (productData['wishlistUsers'] as Map<String, dynamic>)
+              .containsKey(_authenticatedUser.id);
           final Product product = Product(
             id: productId,
             title: productData['title'],
@@ -71,10 +75,14 @@ mixin ProductsModel on ConnectedProductsModel {
             price: productData['price'],
             userEmail: productData['userEmail'],
             userId: productData['userId'],
+            isFavorite: isFaved
           );
           fetchedProducts.add(product);
         });
-        _products = fetchedProducts;
+
+        _products = onlyForUser 
+          ? fetchedProducts.where((Product product) => product.userId == _authenticatedUser.id).toList()
+          : fetchedProducts;
         _isLoading = false;
         notifyListeners();
         _selectedProductId = null;
@@ -162,8 +170,20 @@ mixin ProductsModel on ConnectedProductsModel {
       });
   }
 
-  void toggleFavorite() {
-    final bool isFaved =_products[selectedProductIndex].isFavorite;
+  void toggleFavorite() async {
+    final bool isFaved = _products[selectedProductIndex].isFavorite;
+    print(selectedProduct.id);
+    final bool favStatus = !isFaved;
+    if (favStatus) {
+      await http.put(
+        'https://flutter-easylist-11880.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}',
+        body: json.encode(true)
+      );
+    } else {
+      await http.delete(
+        'https://flutter-easylist-11880.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}',
+      );
+    }
     final Product updatedProduct = Product(
       id: selectedProduct.id,
       title: selectedProduct.title,
@@ -174,7 +194,6 @@ mixin ProductsModel on ConnectedProductsModel {
       userEmail: selectedProduct.userEmail,
       userId: selectedProduct.userId
     );
-    
     _products[selectedProductIndex] = updatedProduct;
     _selectedProductId = null;
     notifyListeners();
