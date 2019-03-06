@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import 'package:full_course/models/product.dart';
+import 'package:full_course/models/location_data.dart';
 import 'package:full_course/scoped-models/main.dart';
+import 'package:full_course/widgets/form_inputs/location.dart';
 
 class ProductEditPage extends StatefulWidget {
   @override
@@ -16,9 +18,11 @@ class _ProductEditPageState extends State<ProductEditPage> {
     'title': null,
     'description': null,
     'price': null,
-    'imageUrl': 'assets/food.jpg'
+    'imageUrl': 'assets/food.jpg',
+    'location': null
   };
   final GlobalKey<FormState> _formKey =GlobalKey<FormState>();
+  final _titleTextController = TextEditingController();
 
   Widget _buildSubmitButton(MainModel model) {
     return model.isLoading 
@@ -32,11 +36,22 @@ class _ProductEditPageState extends State<ProductEditPage> {
   }
 
   Widget _buildTitle(Product product) {
+    if (product == null && _titleTextController.text.trim() == '') {
+      _titleTextController.text = '';
+    } else if (product != null && _titleTextController.text.trim() == '') {
+      _titleTextController.text = product.title;
+    } else if (product != null && _titleTextController.text.trim() != '') {
+      _titleTextController.text = _titleTextController.text;
+    } else if (product == null && _titleTextController.text.trim() != '') {
+      _titleTextController.text = _titleTextController.text;
+    } else {
+      _titleTextController.text = '';
+    }
     return TextFormField(
       decoration: InputDecoration(
         labelText: 'Product Title'
       ),
-      initialValue: product == null ? '' : product.title,
+      controller: _titleTextController,
       validator: (String value) {
         if (value.isEmpty || value.length < 5) {
           return 'Title is required and should be 5+ chars long';
@@ -84,6 +99,10 @@ class _ProductEditPageState extends State<ProductEditPage> {
     );
   }
 
+  void _setLocation(LocationDataModel location) {
+    _formData['location'] = location;
+  }
+
   Widget _buildPageContent(BuildContext context, MainModel model) {
     final double deviceWidth = MediaQuery.of(context).size.width;
     final double targetWidth = deviceWidth > 550.0 ? 500.0 : deviceWidth * 0.95;
@@ -106,6 +125,10 @@ class _ProductEditPageState extends State<ProductEditPage> {
               _buildDescription(product),
               _buildPrice(product),
               SizedBox(
+                height: 10.0,
+              ),
+              LocationInput(_setLocation, product),
+              SizedBox(
                 height: 15.0,
               ),
               _buildSubmitButton(model)
@@ -121,7 +144,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
     }
     _formKey.currentState.save();
     if (model.selectedProductIndex == -1) {
-      model.addProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price'])
+      model.addProduct(_titleTextController.text, _formData['description'], _formData['imageUrl'], _formData['price'], _formData['location'])
         .then((bool success) {
           if (!success) {
             showDialog(
@@ -149,7 +172,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
           
         });
     } else {
-      model.updateProduct(_formData['title'], _formData['description'], _formData['imageUrl'], _formData['price'])
+      model.updateProduct(_titleTextController.text, _formData['description'], _formData['imageUrl'], _formData['price'], _formData['location'])
         .then((_) {
           Navigator.pushReplacementNamed(context, '/products')
             .then((_) {

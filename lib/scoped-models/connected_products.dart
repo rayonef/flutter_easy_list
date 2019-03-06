@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rxdart/subjects.dart';
 
 import 'package:full_course/models/product.dart';
+import 'package:full_course/models/location_data.dart';
 import 'package:full_course/models/user.dart';
 import 'package:full_course/models/auth.dart';
 
@@ -73,6 +74,11 @@ mixin ProductsModel on ConnectedProductsModel {
             description: productData['description'],
             imageUrl: productData['imageUrl'],
             price: productData['price'],
+            location: LocationDataModel(
+              lat: productData['lat'],
+              lng: productData['lng'],
+              address: productData['address']
+            ),
             userEmail: productData['userEmail'],
             userId: productData['userId'],
             isFavorite: isFaved
@@ -89,7 +95,7 @@ mixin ProductsModel on ConnectedProductsModel {
       });
   }
 
-  Future<bool> addProduct(String title, String description, String image, double price) {
+  Future<bool> addProduct(String title, String description, String image, double price, LocationDataModel location) {
     _isLoading = true;
     notifyListeners();
     final Map<String, dynamic> productData = {
@@ -98,7 +104,10 @@ mixin ProductsModel on ConnectedProductsModel {
       'imageUrl': 'https://static01.nyt.com/images/2018/03/14/dining/14FIlipino1-sub/14FIlipino1-sub-articleLarge.jpg?quality=75&auto=webp&disable=upscale',
       'price': price,
       'userEmail': _authenticatedUser.email,
-      'userId': _authenticatedUser.id
+      'userId': _authenticatedUser.id,
+      'lat': location.lat,
+      'lng': location.lng,
+      'address': location.address
     };
     return http.post('https://flutter-easylist-11880.firebaseio.com/products.json?auth=${_authenticatedUser.token}',
       body: json.encode(productData)
@@ -114,6 +123,7 @@ mixin ProductsModel on ConnectedProductsModel {
         description: description,
         imageUrl: image,
         price: price,
+        location: location,
         userEmail: _authenticatedUser.email,
         userId: _authenticatedUser.id
       );
@@ -128,7 +138,7 @@ mixin ProductsModel on ConnectedProductsModel {
     });
   }
 
-  Future<dynamic> updateProduct(String title, String description, String image, double price) {
+  Future<dynamic> updateProduct(String title, String description, String image, double price, LocationDataModel location) {
     _isLoading = true;
     notifyListeners();
     Map<String, dynamic> updateData = {
@@ -137,7 +147,10 @@ mixin ProductsModel on ConnectedProductsModel {
       'imageUrl': 'https://static01.nyt.com/images/2018/03/14/dining/14FIlipino1-sub/14FIlipino1-sub-articleLarge.jpg?quality=75&auto=webp&disable=upscale',
       'price': price,
       'userEmail': selectedProduct.userEmail,
-      'userId': selectedProduct.userId
+      'userId': selectedProduct.userId,
+      'lat': location.lat,
+      'lng': location.lng,
+      'address': location.address
     };
     return http.put('https://flutter-easylist-11880.firebaseio.com/products/${selectedProduct.id}.json?auth=${_authenticatedUser.token}',
       body: json.encode(updateData)
@@ -149,6 +162,7 @@ mixin ProductsModel on ConnectedProductsModel {
         description: description,
         imageUrl: image,
         price: price,
+        location: location,
         userEmail: selectedProduct.userEmail,
         userId: selectedProduct.userId
       );
@@ -191,6 +205,7 @@ mixin ProductsModel on ConnectedProductsModel {
       imageUrl: selectedProduct.imageUrl,
       price: selectedProduct.price,
       isFavorite: !isFaved,
+      location: selectedProduct.location,
       userEmail: selectedProduct.userEmail,
       userId: selectedProduct.userId
     );
@@ -201,7 +216,10 @@ mixin ProductsModel on ConnectedProductsModel {
 
   void selectProduct(String productId) {
     _selectedProductId = productId;
-    notifyListeners();
+    if (productId != null) {
+      notifyListeners();
+    }
+    
   }
 
   void toggleDisplayMode() {

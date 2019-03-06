@@ -3,23 +3,31 @@ import 'dart:async';
 
 import 'package:full_course/widgets/ui_elements/title_default.dart';
 import 'package:full_course/models/product.dart';
-
+import 'package:full_course/pages/map.dart';
 
 class ProductPage extends StatelessWidget {
   final Product product;
 
   ProductPage(this.product);
 
-  Widget _buildAddressPriceRow(Product product) {
+  Widget _buildAddressPriceRow(Product product, BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text(
-          'Union Square, San Fancisco',
-          style: TextStyle(
-            fontFamily: 'Oswald',
-            color: Colors.grey
+        GestureDetector(
+          child: Text(
+            product.location.address,
+            style: TextStyle(
+              fontFamily: 'Oswald',
+              color: Colors.grey
+            ),
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (BuildContext context) => ProductMapPage(product))
+            );
+          }
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.0),
@@ -63,7 +71,7 @@ class ProductPage extends StatelessWidget {
               padding: EdgeInsets.all(10.0),
               child: TitleDefault(product.title),
             ),
-            _buildAddressPriceRow(product),
+            _buildAddressPriceRow(product, context),
             Container(
               padding: EdgeInsets.all(16.0),
               child: Text(

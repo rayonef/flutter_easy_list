@@ -41,7 +41,7 @@ class ProductCard extends StatelessWidget {
           horizontal: 6.0,
           vertical: 2.5
         ),
-        child: Text('Union Square, San Fancisco'),
+        child: Text(product.location.address),
       )
     );
   }
