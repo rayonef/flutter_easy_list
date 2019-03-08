@@ -67,6 +67,9 @@ class _LocationInputState extends State<LocationInput> {
       final coords = decodedRes['results'][0]['geometry']['location'];
       _locationData = LocationDataModel(lat: coords['lat'], lng: coords['lng'], address: formattedAddress);
     } else if (lat == null && lng == null){
+      if (widget.product == null) {
+        return;
+      }
       _locationData = widget.product.location;
     } else {
       _locationData = LocationDataModel(lat: lat, lng: lng, address: address);

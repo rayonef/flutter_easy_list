@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
+
 import 'package:scoped_model/scoped_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rxdart/subjects.dart';
+import 'package:mime_type/mime_type.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'package:full_course/models/product.dart';
 import 'package:full_course/models/location_data.dart';
@@ -73,6 +77,7 @@ mixin ProductsModel on ConnectedProductsModel {
             title: productData['title'],
             description: productData['description'],
             imageUrl: productData['imageUrl'],
+            imagePath: productData['imagePath'],
             price: productData['price'],
             location: LocationDataModel(
               lat: productData['lat'],
@@ -95,13 +100,60 @@ mixin ProductsModel on ConnectedProductsModel {
       });
   }
 
-  Future<bool> addProduct(String title, String description, String image, double price, LocationDataModel location) {
+  Future<Map<String, dynamic>> uploadImage(File image, {String imagePath}) async {
+    final mimeTypeData = mime(image.path).split('/');
+    print(mime(image.path));
+    final imageUploadRequest = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://us-central1-flutter-easylist-11880.cloudfunctions.net/storeImage')
+    );
+    final file = await http.MultipartFile.fromPath(
+      'image',
+      image.path, 
+      contentType: MediaType(
+        mimeTypeData[0],
+        mimeTypeData[1]
+      ),
+    );
+    imageUploadRequest.files.add(file);
+    if (imagePath != null) {
+      imageUploadRequest.fields['imagePath'] = Uri.encodeComponent(imagePath);
+    }
+    imageUploadRequest.headers['Authorization'] = 'Bearer ${_authenticatedUser.token}';
+
+    try {
+      final streamedResponse = await imageUploadRequest.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 201) {
+        print('something went Wrong');
+        print(json.decode(response.body));
+        return null;
+      }
+      final responseData = json.decode(response.body);
+      // map with imagePath && image Url
+      return responseData;
+    } catch (error) {
+      print(error);
+      return null;
+    }
+  }
+
+  Future<bool> addProduct(String title, String description, File image, double price, LocationDataModel location) async {
     _isLoading = true;
     notifyListeners();
+    final uploadData = await uploadImage(image);
+    if (uploadData == null) {
+      print('upload failed');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+
     final Map<String, dynamic> productData = {
       'title': title,
       'description': description,
-      'imageUrl': 'https://static01.nyt.com/images/2018/03/14/dining/14FIlipino1-sub/14FIlipino1-sub-articleLarge.jpg?quality=75&auto=webp&disable=upscale',
+      'imagePath':uploadData['imagePath'],
+      'imageUrl': uploadData['imageUrl'],
       'price': price,
       'userEmail': _authenticatedUser.email,
       'userId': _authenticatedUser.id,
@@ -121,7 +173,8 @@ mixin ProductsModel on ConnectedProductsModel {
         id: res['id'],
         title: title,
         description: description,
-        imageUrl: image,
+        imageUrl: uploadData['imageUrl'],
+        imagePath: productData['imagePath'],
         price: price,
         location: location,
         userEmail: _authenticatedUser.email,
@@ -138,13 +191,28 @@ mixin ProductsModel on ConnectedProductsModel {
     });
   }
 
-  Future<dynamic> updateProduct(String title, String description, String image, double price, LocationDataModel location) {
+  Future<dynamic> updateProduct(String title, String description, File image, double price, LocationDataModel location) async {
     _isLoading = true;
     notifyListeners();
+    String imageUrl = selectedProduct.imageUrl;
+    String imagePath = selectedProduct.imagePath;
+    if (image != null) {
+      final uploadData = await uploadImage(image);
+      if (uploadData == null) {
+        print('upload failed');
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      imageUrl = uploadData['imageUrl'];
+      imagePath = uploadData['imagePath'];
+    }
     Map<String, dynamic> updateData = {
       'title': title,
       'description': description,
-      'imageUrl': 'https://static01.nyt.com/images/2018/03/14/dining/14FIlipino1-sub/14FIlipino1-sub-articleLarge.jpg?quality=75&auto=webp&disable=upscale',
+      'imageUrl': imageUrl,
+      'imagePath': imagePath,
       'price': price,
       'userEmail': selectedProduct.userEmail,
       'userId': selectedProduct.userId,
@@ -160,7 +228,8 @@ mixin ProductsModel on ConnectedProductsModel {
         id: selectedProduct.id,
         title: title,
         description: description,
-        imageUrl: image,
+        imageUrl: imageUrl,
+        imagePath: imagePath,
         price: price,
         location: location,
         userEmail: selectedProduct.userEmail,
@@ -203,6 +272,7 @@ mixin ProductsModel on ConnectedProductsModel {
       title: selectedProduct.title,
       description: selectedProduct.description,
       imageUrl: selectedProduct.imageUrl,
+      imagePath: selectedProduct.imagePath,
       price: selectedProduct.price,
       isFavorite: !isFaved,
       location: selectedProduct.location,
@@ -308,7 +378,7 @@ mixin UserModel on ConnectedProductsModel {
   void logout() async {
     print('logout');
     _authenticatedUser = null;
-    _authTimer.cancel();
+    if(_authTimer != null )_authTimer.cancel();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove('token');
     prefs.remove('userEmail');

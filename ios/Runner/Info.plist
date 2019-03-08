@@ -28,8 +28,12 @@
 	<string>Main</string>
 	<key>io.flutter.embedded_views_preview</key>
 	<string>YES</string>
-	 <key>NSLocationWhenInUseUsageDescription</key>
+	<key>NSLocationWhenInUseUsageDescription</key>
   <string>Using location to display on a map</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Image is used a as product image</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Image is used a as product image</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
