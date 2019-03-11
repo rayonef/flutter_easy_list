@@ -87,3 +87,4 @@ exports.deleteImage = functions.database.ref('/products/{productId}')
     return bucket.file(imagePath).delete();
   })
 
+

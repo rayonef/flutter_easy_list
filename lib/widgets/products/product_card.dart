@@ -55,16 +55,20 @@ class ProductCard extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.info),
               color: Theme.of(context).accentColor,
-              onPressed: () => Navigator.pushNamed<bool>(
-                context, '/product/${model.allProducts[productIndex].id}'
-              ),
+              onPressed: () {
+                model.selectProduct(model.allProducts[productIndex].id);
+                print(model.selectedProduct.isFavorite);
+                Navigator.pushNamed<bool>(
+                  context, '/product/${model.allProducts[productIndex].id}'
+                ).then((_) => model.selectProduct(null));
+              },
             ),
             IconButton(
               icon: Icon(model.allProducts[productIndex].isFavorite ? Icons.favorite : Icons.favorite_border),
               color: Colors.red,
               onPressed: () {
                 model.selectProduct(model.allProducts[productIndex].id);
-                model.toggleFavorite();
+                model.toggleFavorite(true);
               },
             ),
           ],
@@ -79,11 +83,14 @@ class ProductCard extends StatelessWidget {
     return Card(
       child: Column(
         children: <Widget>[
-          FadeInImage(
-            image: NetworkImage(product.imageUrl),
-            height: 300.0,
-            fit: BoxFit.cover,
-            placeholder: AssetImage('assets/food.jpg'),
+          Hero(
+            tag: product.id,
+            child: FadeInImage(
+              image: NetworkImage(product.imageUrl),
+              height: 300.0,
+              fit: BoxFit.cover,
+              placeholder: AssetImage('assets/food.jpg'),
+            ),
           ),
           _buildTitlePriceRow(),
           _buildAddress(),

@@ -253,7 +253,7 @@ mixin ProductsModel on ConnectedProductsModel {
       });
   }
 
-  void toggleFavorite() async {
+  void toggleFavorite(bool toggle) async {
     final bool isFaved = _products[selectedProductIndex].isFavorite;
     print(selectedProduct.id);
     final bool favStatus = !isFaved;
@@ -280,7 +280,7 @@ mixin ProductsModel on ConnectedProductsModel {
       userId: selectedProduct.userId
     );
     _products[selectedProductIndex] = updatedProduct;
-    _selectedProductId = null;
+    if (toggle) _selectedProductId = null;
     notifyListeners();
   }
 

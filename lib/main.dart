@@ -7,6 +7,7 @@ import 'package:full_course/pages/products.dart';
 import 'package:full_course/pages/product.dart';
 import 'package:full_course/scoped-models/main.dart';
 import 'package:full_course/models/product.dart';
+import 'package:full_course/helpers/custom_route.dart';
 
 void main() {
   // MapView.setApiKey('AIzaSyDV9hvQ5ziMJ1Pbys7e-vbWaQR-K6lNyRM');
@@ -67,14 +68,14 @@ class _MyAppState extends State<MyApp> {
           if (pathElements[1] == 'product') {
             final String productId = pathElements[2];
             final Product product = _model.allProducts.firstWhere((Product product) => product.id ==productId);
-            return MaterialPageRoute<bool>(
+            return CustomRoute<bool>(
               builder: (BuildContext context) => !_isAuthenticated ? AuthPage() : ProductPage(product),
             );
           }
           return null;
         },
         onUnknownRoute: (RouteSettings setting) {
-          return MaterialPageRoute(
+          return CustomRoute(
             builder: (BuildContext context) => !_isAuthenticated ? AuthPage() : ProductsPage(_model),
           );
         },
